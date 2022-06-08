@@ -23,11 +23,14 @@ public class Server
       switch(packetType)
       {
         case PacketType.Connect:
+          Console.WriteLine("Connection accepted from: " + endPoint.Address + ".");    
           break;
         case PacketType.PlaceUnit:
           P_PlaceUnit parsed = new P_PlaceUnit();
           parsed.Deserialize(received);
-
+          parsed.x = ((parsed.x - 16) * -1) + 16;
+          byte[] response = parsed.Serialize();
+          listener.Send(response, response.Length, endPoint);
           Console.WriteLine("Placed a unit of type: " + parsed.unitType + " at ( " + parsed.x + ", " + parsed.z + " ).");
           break;
       }
