@@ -5,12 +5,13 @@ public enum UnitType : byte
   Capsule,
   Cylinder
 }
-public abstract class Unit
+
+public class Unit
 {
   public UnitType type;
   public bool flying;
   public float speed;
   public float x, y, z;
 
-  public abstract void Act(float deltaTime);
+  public virtual void Act(float deltaTime) {}
 }

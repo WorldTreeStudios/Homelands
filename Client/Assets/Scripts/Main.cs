@@ -91,8 +91,9 @@ public class Main : MonoBehaviour
           P_PlaceUnit p = new P_PlaceUnit();
           p.Deserialize(packet);
 
-          GameObject spawnedUnit = GameObject.CreatePrimitive(PrimitiveType.Cube);
+          GameObject spawnedUnit = Instantiate(UnitController.prefabs[p.unitType]);
           spawnedUnit.transform.position = new Vector3(p.x, 10.5f, p.z);
+          spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[p.unitType](spawnedUnit.transform.position);
           break;
       }
     }
