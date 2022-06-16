@@ -4,31 +4,32 @@ using UnityEngine;
 
 public class DeckController : MonoBehaviour
 {
-  public GameObject SelectedUnit;
+  public UnitType SelectedUnit;
   public GameObject SelectedCard;
 
   [SerializeField]
   private RectTransform CardPanel;
   [SerializeField]
   private GameObject CardBase;
+  [SerializeField]
+  private UnitController UnitController;
 
   public void Start()
   {
     // TODO: Fetch player's deck
-    PrimitiveType[] primTypes = { PrimitiveType.Cube, PrimitiveType.Sphere, PrimitiveType.Capsule, PrimitiveType.Cylinder };
     for(int i = 0; i < 4; i++) {
       GameObject curr = Instantiate(CardBase);
       curr.transform.SetParent(CardPanel, false);
       Card currData = curr.GetComponent<Card>();
       currData.DeckController = this;
-      currData.Unit = GameObject.CreatePrimitive(primTypes[i]);
+      currData.UnitType = 0;
       curr.SetActive(true);
     }
   }
 
   public void Select(Card c)
   {
-    SelectedUnit = c.Unit;
+    SelectedUnit = c.UnitType;
     SelectedCard = c.gameObject;
   }
   

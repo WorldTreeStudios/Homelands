@@ -6,7 +6,7 @@ public class Card : MonoBehaviour
 {
   public DeckController DeckController;
 
-  public GameObject Unit;
+  public UnitType UnitType;
 
   public void Start() {}
 

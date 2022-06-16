@@ -9,6 +9,8 @@ public class Main : MonoBehaviour
 {
   [SerializeField]
   private DeckController DeckController;
+  [SerializeField]
+  private UnitController UnitController;
 
   private const int port = 9999;
   private UdpClient connection;
@@ -43,27 +45,33 @@ public class Main : MonoBehaviour
 
   private void HandleInput()
   {
-    if (Input.GetMouseButtonDown(0) && DeckController.SelectedUnit != null)
+    if (Input.GetMouseButtonDown(0) && DeckController.SelectedCard != null)
     {
       RaycastHit hit;
       Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
       if (Physics.Raycast(ray, out hit))
       {
-
         // Spawn the Unit ...
-        GameObject spawnedUnit = Instantiate(DeckController.SelectedUnit);
+        UnitType toSpawn = DeckController.SelectedUnit;
+        GameObject spawnedUnit = Instantiate(UnitController.prefabs[toSpawn]);
+
         // ... at the location of the raycast collision
         float unitHeight = spawnedUnit.GetComponent<MeshRenderer>().bounds.extents.y;
         Vector3 offsetVector = new Vector3(0, unitHeight, 0);
-        spawnedUnit.transform.position = hit.point + offsetVector; // TODO: Further validate location
+        Vector3 spawnPos = hit.point + offsetVector;
+        spawnedUnit.transform.position = spawnPos; // TODO: Further validate location
+
+        // ... assign the unit's behavior script
+        spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[toSpawn](spawnPos);
+
         // ... and send it to the server
-        Send(new P_PlaceUnit(1, spawnedUnit.transform.position.x,spawnedUnit.transform.position.z));
+        Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.z));
 
         // TODO: Control active cards based on server data
         // Remove the card
         DeckController.SelectedCard.SetActive(false);
-        DeckController.SelectedUnit = null;
+        DeckController.SelectedCard = null;
       }
     }
   }
