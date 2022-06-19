@@ -1,9 +1,9 @@
-public class U_Cube : Unit
+public class U_Sphere : Unit
 {
-  public U_Cube(bool il, float _x, float _y, float _z) : base(il, _x, _y, _z)
+  public U_Sphere(bool il, float _x, float _y, float _z) : base(il, _x, _y, _z)
   {
     flying = false;
-    speed = 1f;
+    speed = 2f;
   }
 
   public override void Act(float deltaTime)

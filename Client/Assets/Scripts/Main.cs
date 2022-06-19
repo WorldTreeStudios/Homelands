@@ -63,7 +63,7 @@ public class Main : MonoBehaviour
         spawnedUnit.transform.position = spawnPos; // TODO: Further validate location
 
         // ... assign the unit's behavior script
-        spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[toSpawn](spawnPos);
+        spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[toSpawn](true, spawnPos);
 
         // ... and send it to the server
         Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.z));
@@ -93,7 +93,7 @@ public class Main : MonoBehaviour
 
           GameObject spawnedUnit = Instantiate(UnitController.prefabs[p.unitType]);
           spawnedUnit.transform.position = new Vector3(p.x, 10.5f, p.z);
-          spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[p.unitType](spawnedUnit.transform.position);
+          spawnedUnit.GetComponent<UnitBehavior>().unit = UnitController.behaviors[p.unitType](false, spawnedUnit.transform.position);
           break;
       }
     }

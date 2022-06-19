@@ -23,7 +23,7 @@ public class DeckController : MonoBehaviour
       GameObject curr = Instantiate(CardBase);
       curr.transform.SetParent(CardPanel, false);
       Card currData = curr.GetComponent<Card>();
-      currData.UnitType = 0;
+      currData.UnitType = (i%2==0) ? UnitType.Cube : UnitType.Sphere;
 
       Button currButton = curr.GetComponent<Button>();
       currButton.onClick.AddListener(delegate { Select(currData); }); 

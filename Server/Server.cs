@@ -17,7 +17,7 @@ public class Server
   // Gameplay variables
   private bool active = true;
   private List<Unit> units;
-  private static Dictionary<UnitType, Func<float, float, Unit>> behaviors;
+  private static Dictionary<UnitType, Func<bool, float, float, Unit>> behaviors;
   
   // Time variables
   private static Stopwatch stopwatch;
@@ -26,9 +26,10 @@ public class Server
   static void Main(string[] args)
   {
     // Initialize static variables
-    behaviors = new Dictionary<UnitType, Func<float, float, Unit>>();
-    behaviors.Add(UnitType.Cube, (float x, float z) => new U_Cube(x, 0, z));
-    
+    behaviors = new Dictionary<UnitType, Func<bool, float, float, Unit>>();
+    behaviors.Add(UnitType.Cube, (bool isLeft, float x, float z) => new U_Cube(isLeft, x, 0, z));
+    behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float z) => new U_Sphere(isLeft, x, 0, z));
+
     stopwatch = new Stopwatch();
 
     // Start a server instance
@@ -104,7 +105,8 @@ public class Server
           P_PlaceUnit parsed = new P_PlaceUnit();
           parsed.Deserialize(packet);
           parsed.x = ((parsed.x - 16) * -1) + 16;
-          units.Add(behaviors[parsed.unitType](parsed.x, parsed.z));
+          bool left = connections[0] == endPoint;
+          units.Add(behaviors[parsed.unitType](left, parsed.x, parsed.z));
 
           byte[] response = parsed.Serialize();
           foreach (IPEndPoint ep in connections)
