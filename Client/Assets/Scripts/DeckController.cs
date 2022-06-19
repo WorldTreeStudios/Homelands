@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class DeckController : MonoBehaviour
 {
@@ -21,8 +23,10 @@ public class DeckController : MonoBehaviour
       GameObject curr = Instantiate(CardBase);
       curr.transform.SetParent(CardPanel, false);
       Card currData = curr.GetComponent<Card>();
-      currData.DeckController = this;
       currData.UnitType = 0;
+
+      Button currButton = curr.GetComponent<Button>();
+      currButton.onClick.AddListener(delegate { Select(currData); }); 
       curr.SetActive(true);
     }
   }
