@@ -6,22 +6,18 @@ using UnityEngine.UI;
 
 public class DeckController : MonoBehaviour
 {
-  public UnitType SelectedUnit;
-  public GameObject SelectedCard;
+  public UnitType SelectedUnit { get; set; }
+  public GameObject SelectedCard { get; set; }
 
   [SerializeField]
-  private RectTransform CardPanel;
+  private RectTransform cardPanel;
   [SerializeField]
-  private GameObject CardBase;
-  [SerializeField]
-  private UnitController UnitController;
-
+  private GameObject cardBase;
   public void Start()
   {
     // TODO: Fetch player's deck
     for(int i = 0; i < 4; i++) {
-      GameObject curr = Instantiate(CardBase);
-      curr.transform.SetParent(CardPanel, false);
+      GameObject curr = Instantiate(cardBase, cardPanel, false);
       Card currData = curr.GetComponent<Card>();
       currData.UnitType = (i%2==0) ? UnitType.Cube : UnitType.Sphere;
 

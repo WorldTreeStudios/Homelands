@@ -8,17 +8,17 @@ public enum UnitType : byte
 
 public class Unit
 {
-  public UnitType type;
-  public bool isLeft;
+  public UnitType Type { get; protected set; }
+  public bool IsLeft { get; protected set; }
 
-  public bool flying;
-  public float speed;
+  public bool Flying { get; protected set; }
+  public float Speed { get; protected set; }
   public float x, y, z;
 
   // Base constructor for every Unit, instances responsible for setting type, flying, and speed.
   public Unit(bool il, float _x, float _y, float _z)
   {
-    isLeft = il; 
+    IsLeft = il; 
     x = _x;
     y = _y;
     z = _z;

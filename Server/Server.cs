@@ -8,29 +8,28 @@ using System.Threading;
 public class Server
 {  
   // Network variables
-  private const int port = 9999;
-  private List<IPEndPoint> connections;
-  private UdpClient listener;
-  private IPEndPoint endPoint;
-  private Queue<(byte[], IPEndPoint)> packets;
+  private const int Port = 9999;
+  private List<IPEndPoint> _connections;
+  private UdpClient _listener;
+  private IPEndPoint _endPoint;
+  private Queue<(byte[], IPEndPoint)> _packets;
 
   // Gameplay variables
-  private bool active = true;
-  private List<Unit> units;
-  private static Dictionary<UnitType, Func<bool, float, float, Unit>> behaviors;
+  private List<Unit> _units;
+  private static Dictionary<UnitType, Func<bool, float, float, Unit>> _behaviors;
   
   // Time variables
-  private static Stopwatch stopwatch;
+  private static Stopwatch _stopwatch;
   private const int TICKRATE = 20;
 
   static void Main(string[] args)
   {
     // Initialize static variables
-    behaviors = new Dictionary<UnitType, Func<bool, float, float, Unit>>();
-    behaviors.Add(UnitType.Cube, (bool isLeft, float x, float z) => new U_Cube(isLeft, x, 0, z));
-    behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float z) => new U_Sphere(isLeft, x, 0, z));
+    _behaviors = new Dictionary<UnitType, Func<bool, float, float, Unit>>();
+    _behaviors.Add(UnitType.Cube, (bool isLeft, float x, float z) => new U_Cube(isLeft, x, 0, z));
+    _behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float z) => new U_Sphere(isLeft, x, 0, z));
 
-    stopwatch = new Stopwatch();
+    _stopwatch = new Stopwatch();
 
     // Start a server instance
     new Server().Start();
@@ -40,37 +39,37 @@ public class Server
   public void Start()
   {
     // Initialize instance variables
-    listener = new UdpClient(port);
-    endPoint = new IPEndPoint(IPAddress.Any, port);
-    connections = new List<IPEndPoint>();
-    packets = new Queue<(byte[], IPEndPoint)>();
+    _listener = new UdpClient(Port);
+    _endPoint = new IPEndPoint(IPAddress.Any, Port);
+    _connections = new List<IPEndPoint>();
+    _packets = new Queue<(byte[], IPEndPoint)>();
 
-    units = new List<Unit>();
-    stopwatch.Start();
+    _units = new List<Unit>();
+    _stopwatch.Start();
 
     // Start receiving data asynchronously over UDP
-    listener.BeginReceive(new AsyncCallback(Receive), null);
+    _listener.BeginReceive(new AsyncCallback(Receive), null);
 
     // Start the server's loop
     Update();
 
     // After loop exits, stop timer, close UDP connection
-    stopwatch.Stop();
-    listener.Close();
+    _stopwatch.Stop();
+    _listener.Close();
   }
 
   public void Update()
   {
-    double time = stopwatch.Elapsed.TotalSeconds;
+    double time = _stopwatch.Elapsed.TotalSeconds;
     float delta;
-
-    while (active)
+    
+    while (true)
     {
       // Calculate deltaTime from last update
-      double currTime = stopwatch.Elapsed.TotalSeconds;
+      double currTime = _stopwatch.Elapsed.TotalSeconds;
       (delta, time) = ((float) (currTime - time), currTime);
 
-      foreach(Unit u in units)
+      foreach(Unit u in _units)
       {
         u.Act(delta);
       }
@@ -85,18 +84,18 @@ public class Server
   // Parse packet queue
   private void HandleMessages()
   {
-    while (packets.Count > 0)
+    while (_packets.Count > 0)
     {
-      (byte[] packet, IPEndPoint endPoint) = packets.Dequeue();
+      (byte[] packet, IPEndPoint endPoint) = _packets.Dequeue();
       PacketType packetType = (PacketType)packet[0];
 
       switch (packetType)
       {
         case PacketType.Connect:
           Console.WriteLine("Connection accepted from: " + endPoint.Address + ".");
-          if (!connections.Contains(endPoint))
+          if (!_connections.Contains(endPoint))
           {
-            connections.Add(endPoint);
+            _connections.Add(endPoint);
           }
           break;
 
@@ -105,14 +104,14 @@ public class Server
           P_PlaceUnit parsed = new P_PlaceUnit();
           parsed.Deserialize(packet);
           parsed.x = ((parsed.x - 16) * -1) + 16;
-          bool left = connections[0] == endPoint;
-          units.Add(behaviors[parsed.unitType](left, parsed.x, parsed.z));
+          bool left = _connections[0] == endPoint;
+          _units.Add(_behaviors[parsed.unitType](left, parsed.x, parsed.z));
 
           byte[] response = parsed.Serialize();
-          foreach (IPEndPoint ep in connections)
+          foreach (IPEndPoint ep in _connections)
           {
             if (!ep.Equals(endPoint))
-              listener.Send(response, response.Length, ep);
+              _listener.Send(response, response.Length, ep);
           }
           Console.WriteLine("Placed a unit of type: " + parsed.unitType + " at ( " + parsed.x + ", " + parsed.z + " ).");
           break;
@@ -122,11 +121,11 @@ public class Server
 
   private void Receive(IAsyncResult ar)
   {
-    byte[] received = listener.EndReceive(ar, ref endPoint);
+    byte[] received = _listener.EndReceive(ar, ref _endPoint);
 
     // Add received data to the queue for parsing ...
-    packets.Enqueue((received, endPoint));
+    _packets.Enqueue((received, _endPoint));
     // ... and recursively start listening for data again
-    listener.BeginReceive(new AsyncCallback(Receive), null);
+    _listener.BeginReceive(new AsyncCallback(Receive), null);
   }
 }
