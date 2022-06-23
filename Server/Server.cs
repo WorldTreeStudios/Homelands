@@ -71,7 +71,7 @@ public class Server
 
       foreach(Unit u in _units)
       {
-        u.Act(delta);
+        u.Act(delta, _units);
       }
 
       // Parse messages that have been received since last update

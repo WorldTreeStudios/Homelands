@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 public enum UnitType : byte
 {
   Cube,
@@ -14,7 +15,7 @@ public class Unit
   public bool Flying { get; protected set; }
   public float Speed { get; protected set; }
   public float x, y, z;
-
+  
   // Base constructor for every Unit, instances responsible for setting type, flying, and speed.
   public Unit(bool il, float _x, float _y, float _z)
   {
@@ -24,5 +25,5 @@ public class Unit
     z = _z;
   }
 
-  public virtual void Act(float deltaTime) {}
+  public virtual void Act(float deltaTime, List<Unit> units) {}
 }

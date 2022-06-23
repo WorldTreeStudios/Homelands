@@ -17,8 +17,12 @@ public class Main : MonoBehaviour
 
   private Queue<byte[]> _packets;
 
+  public static List<Unit> units;
+  
   public void Start()
   {
+    // Setup game variables
+    units = new List<Unit>();
     // Establish connection
     _connection = new UdpClient();
 
@@ -62,8 +66,12 @@ public class Main : MonoBehaviour
         spawnedUnit.transform.position = spawnPos; // TODO: Further validate location
 
         // ... assign the unit's behavior script
-        spawnedUnit.GetComponent<UnitBehavior>().unit = unitController.Behaviors[toSpawn](true, spawnPos);
-
+        Unit unitDef = unitController.Behaviors[toSpawn](true, spawnPos);
+        spawnedUnit.GetComponent<UnitBehavior>().unit = unitDef;
+       
+        // ... add it to our local list
+        units.Add(unitDef);
+        
         // ... and send it to the server
         Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.z));
 
@@ -89,10 +97,13 @@ public class Main : MonoBehaviour
           // Spawn the unit, TODO: Use unit definitions here
           P_PlaceUnit p = new P_PlaceUnit();
           p.Deserialize(packet);
-
+          
           GameObject spawnedUnit = Instantiate(unitController.Prefabs[p.unitType]);
           spawnedUnit.transform.position = new Vector3(p.x, 10.5f, p.z);
-          spawnedUnit.GetComponent<UnitBehavior>().unit = unitController.Behaviors[p.unitType](false, spawnedUnit.transform.position);
+          Unit unitDef = unitController.Behaviors[p.unitType](false, spawnedUnit.transform.position);
+          spawnedUnit.GetComponent<UnitBehavior>().unit = unitDef;
+          
+          units.Add(unitDef);
           break;
       }
     }

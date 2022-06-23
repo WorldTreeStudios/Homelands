@@ -15,7 +15,7 @@ public class UnitBehavior : MonoBehaviour
   // Serves as the go-between for the ground truth server definitions, and the unity gameobject data
   void Update()
   {
-    unit.Act(Time.deltaTime);
+    unit.Act(Time.deltaTime, Main.units);
     gameObject.transform.position = new Vector3(unit.x, unit.y, unit.z);
   }
 }
