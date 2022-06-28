@@ -48,6 +48,7 @@ public class Main : MonoBehaviour
 
   private void HandleInput()
   {
+    // The user left clicked with a card selected
     if (Input.GetMouseButtonDown(0) && deckController.SelectedCard != null)
     {
       RaycastHit hit;

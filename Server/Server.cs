@@ -15,12 +15,14 @@ public class Server
   private Queue<(byte[], IPEndPoint)> _packets;
 
   // Gameplay variables
+  private List<Player> _players;
   private List<Unit> _units;
   private static Dictionary<UnitType, Func<bool, float, float, Unit>> _behaviors;
+  private const float ManaPerSecond = .5f; 
   
   // Time variables
   private static Stopwatch _stopwatch;
-  private const int TICKRATE = 20;
+  private const int TickRate = 20;
 
   static void Main(string[] args)
   {
@@ -44,6 +46,7 @@ public class Server
     _connections = new List<IPEndPoint>();
     _packets = new Queue<(byte[], IPEndPoint)>();
 
+    _players = new List<Player>();
     _units = new List<Unit>();
     _stopwatch.Start();
 
@@ -74,10 +77,15 @@ public class Server
         u.Act(delta, _units);
       }
 
+      foreach (Player p in _players)
+      {
+        p.Mana += delta * ManaPerSecond;
+      }
+
       // Parse messages that have been received since last update
       HandleMessages();
 
-      Thread.Sleep(1000 / TICKRATE);
+      Thread.Sleep(1000 / TickRate);
     }
   }
 
@@ -96,6 +104,7 @@ public class Server
           if (!_connections.Contains(endPoint))
           {
             _connections.Add(endPoint);
+            _players.Add(new Player(endPoint));
           }
           break;
 
@@ -104,7 +113,7 @@ public class Server
           P_PlaceUnit parsed = new P_PlaceUnit();
           parsed.Deserialize(packet);
           parsed.x = ((parsed.x - 16) * -1) + 16;
-          bool left = _connections[0] == endPoint;
+          bool left = _connections[0].Equals(endPoint);
           _units.Add(_behaviors[parsed.unitType](left, parsed.x, parsed.z));
 
           byte[] response = parsed.Serialize();
