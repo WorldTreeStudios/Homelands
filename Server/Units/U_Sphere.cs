@@ -8,14 +8,22 @@ public class U_Sphere : Unit
     Type = UnitType.Sphere;
     Flying = false;
     Speed = 5f;
+   
+    MaxHealth = 100;
+    Health = MaxHealth;
+    
     DetectRange = 10f;
     AttackRange = 4f;
+    AttackPerSecond = 2f;
+    Damage = 10;
   }
   
   public override void Act(float deltaTime, List<Unit> units)
   {
-    Vector2 movementVector = TargetEnemies(units, out Unit enemyTargeted);
-    if(enemyTargeted is null)
+    TimeSinceAttack += deltaTime;
+    
+    Vector2 movementVector = TargetEnemies(units, out Unit target);
+    if(target is null)
       movementVector = TargetBase();
     
     x += Speed * movementVector.X * deltaTime;

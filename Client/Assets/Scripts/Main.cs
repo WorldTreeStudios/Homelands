@@ -10,7 +10,9 @@ public class Main : MonoBehaviour
   private DeckController deckController;
   [SerializeField]
   private UnitController unitController;
-
+  [SerializeField]
+  private GameObject healthBar;
+  
   private const int Port = 9999;
   private UdpClient _connection;
   private IPEndPoint _endPoint;
@@ -56,22 +58,16 @@ public class Main : MonoBehaviour
 
       if (Physics.Raycast(ray, out hit))
       {
-        // Spawn the Unit ...
+        // Get the appropriate unit type 
         UnitType toSpawn = deckController.SelectedUnit;
-        GameObject spawnedUnit = Instantiate(unitController.Prefabs[toSpawn]);
-
-        // ... at the location of the raycast collision
-        float unitHeight = spawnedUnit.GetComponent<MeshRenderer>().bounds.extents.y;
+        
+        // ... and the location of the raycast collision
+        float unitHeight = unitController.Prefabs[toSpawn].GetComponent<MeshRenderer>().bounds.extents.y;
         Vector3 offsetVector = new Vector3(0, unitHeight, 0);
         Vector3 spawnPos = hit.point + offsetVector;
-        spawnedUnit.transform.position = spawnPos; // TODO: Further validate location
-
-        // ... assign the unit's behavior script
-        Unit unitDef = unitController.Behaviors[toSpawn](true, spawnPos);
-        spawnedUnit.GetComponent<UnitBehavior>().unit = unitDef;
        
-        // ... add it to our local list
-        units.Add(unitDef);
+        // ... then spawn the unit
+        SpawnUnit(toSpawn, spawnPos, true);
         
         // ... and send it to the server
         Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.z));
@@ -84,6 +80,23 @@ public class Main : MonoBehaviour
     }
   }
 
+  private void SpawnUnit(UnitType ut, Vector3 pos, bool isLeft)
+  {
+    // Every unit is represented visually by a gameobject
+    GameObject spawned = Instantiate(unitController.Prefabs[ut]);
+    // and has a health bar above it
+    GameObject health = Instantiate(healthBar, spawned.transform, false);
+    
+    // Internally, it needs a "Unit" object 
+    Unit unitDef = unitController.Behaviors[ut](isLeft, pos);
+    units.Add(unitDef); // Which we will keep track of in this list
+   
+    // And to connect internal definitions to the unity gameobjects, use a "UnitBehavior" object
+    UnitBehavior u = spawned.GetComponent<UnitBehavior>();
+    u.unit = unitDef;
+    u.healthBar = health;
+  }
+  
   private void HandleMessages()
   {
     while (_packets.Count > 0)
@@ -95,16 +108,10 @@ public class Main : MonoBehaviour
         case PacketType.Connect:
           break;
         case PacketType.PlaceUnit:
-          // Spawn the unit, TODO: Use unit definitions here
           P_PlaceUnit p = new P_PlaceUnit();
           p.Deserialize(packet);
           
-          GameObject spawnedUnit = Instantiate(unitController.Prefabs[p.unitType]);
-          spawnedUnit.transform.position = new Vector3(p.x, 10.5f, p.z);
-          Unit unitDef = unitController.Behaviors[p.unitType](false, spawnedUnit.transform.position);
-          spawnedUnit.GetComponent<UnitBehavior>().unit = unitDef;
-          
-          units.Add(unitDef);
+          SpawnUnit(p.unitType, new Vector3(p.x,10.5f,p.z), false);
           break;
       }
     }

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Vector2 = System.Numerics.Vector2;
+using System.Numerics;
 
 public class U_Cube : Unit
 {
@@ -8,17 +8,13 @@ public class U_Cube : Unit
     Type = UnitType.Cube;
     Flying = false;
     Speed = 8f;
+   
+    MaxHealth = 100;
+    Health = MaxHealth;
+    
     DetectRange = 15f;
     AttackRange = 3f;
-  }
-  
-  public override void Act(float deltaTime, List<Unit> units)
-  {
-    Vector2 movementVector = TargetEnemies(units, out Unit enemyTargeted);
-    if(enemyTargeted is null)
-      movementVector = TargetBase();
-   
-    x += Speed * movementVector.X * deltaTime;
-    z += Speed * movementVector.Y * deltaTime;
+    AttackPerSecond = 1;
+    Damage = 10;
   }
 }

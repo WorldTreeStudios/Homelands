@@ -633,6 +633,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   deckController: {fileID: 688341572}
   unitController: {fileID: 528120366}
+  healthBar: {fileID: 8643638281823918659, guid: 8d39e89b6dd22a944abcb48bbef00efa, type: 3}
 --- !u!1 &1444593838 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2722178066217241162, guid: 07d2978e884206643a7a40b86b3d58b2, type: 3}

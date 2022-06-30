@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Vector2 = System.Numerics.Vector2;
+using System.Numerics;
 
 public enum UnitType : byte
 {
@@ -13,15 +13,37 @@ public enum UnitType : byte
 public class Unit
 {
   public UnitType Type { get; protected set; }
+
+  // HP
+  public int MaxHealth { get; protected set; } 
+  public int Health { get; set; }
+
+  // Movement 
+  public bool Ranged { get; protected set; }
   public bool Flying { get; protected set; }
-  public float Speed { get; protected set; }
-  public float DetectRange { get; protected set; }
-  public float AttackRange { get; protected set; }
-  
+  protected float Speed { get; set; }
+ 
   public bool IsLeft { get; protected set; }
   public float x, y, z;
   
-  // Base constructor for every Unit, instances responsible for setting type, flying, and speed.
+  // Attack
+  protected float DetectRange { get; set; }
+  protected float AttackRange { get; set; }
+  
+  protected float AttackPerSecond { get; set; }
+  protected float TimeSinceAttack { get; set; }
+  protected int Damage { get; set; }
+  
+  // TODO: Do these belong here? No. Not sure where they go yet tho lol
+  const float bridgeLeft = 8.6f;
+  const float bridgeRight = 23.4f;
+  const float bridgeBottom = 10f;
+  const float bridgeTop = 17f;
+
+  const float baseX = 36f;
+  const float baseZ = 0f;
+  
+  // Base constructor for every Unit, instances responsible for setting type specific Params.
   public Unit(bool il, float _x, float _y, float _z)
   {
     IsLeft = il; 
@@ -30,8 +52,62 @@ public class Unit
     z = _z;
   }
 
-  public virtual void Act(float deltaTime, List<Unit> units) {}
+  public void Act(float deltaTime, List<Unit> units)
+  {
+    TimeSinceAttack += deltaTime;
+   
+    /* TODO: Change pathfinding to the following implementation:
+     * vec2 target = findtarget()
+     * vec2 move = pathTo(target)
+     * update coords
+     */
+    
+    Vector2 movementVector = TargetEnemies(units, out Unit target);
+    if(target is null)
+      movementVector = TargetBase();
+    
+    x += Speed * movementVector.X * deltaTime;
+    z += Speed * movementVector.Y * deltaTime;
+  }
 
+  /*
+  protected Vector2 FindTarget(List<Unit> units)
+  {
+    Vector2 position = new Vector2(x, z);
+    
+    foreach (Unit u in units)
+    {
+      // If on the same team, don't target
+      if (u.IsLeft == IsLeft) continue;
+      
+      Vector2 enemyPos = new Vector2(u.x, u.z);
+      float distance = Vector2.Distance(position, enemyPos);
+      
+      // If unit is out of detection range, don't target;
+      if (!(distance <= DetectRange)) continue;
+
+      return new Vector2(u.x,u.z);
+    }
+
+    return new Vector2(baseX, baseZ);
+  }
+
+  protected Vector2 pathTo(Vector2 destination)
+  {
+       
+  }
+  */
+  
+  protected void Attack(Unit target)
+  {
+    // TODO: Queue these attacks in some way
+    if (TimeSinceAttack < (1 / AttackPerSecond)) return;
+    
+    target.Health -= Damage;
+    if (target.Health < 0) target.Health = 0;
+    TimeSinceAttack = 0;
+  }
+  
   protected Vector2 TargetEnemies(List<Unit> units, out Unit enemyTargeted)
   {
     Vector2 position = new Vector2(x, z);
@@ -48,9 +124,12 @@ public class Unit
       // If an enemy is close enough to detect, we will target it
       enemyTargeted = u;
        
-      // If the enemy is in attack range then stand still to attack it
+      // If the enemy is in attack range then stand still and attack it
       if (distance <= AttackRange)
+      {
+        Attack(u); 
         return new Vector2(0, 0);
+      }
         
       // else walk towards it
       Vector2 movement = Vector2.Normalize(enemyPos - position);
@@ -74,14 +153,6 @@ public class Unit
     Vector2 position = new Vector2(Flip(x), Math.Abs(z));
     Vector2 destination = new Vector2(0, 0);
     
-    // TODO: Do these belong here? No. Not sure where they go yet tho lol
-    const float bridgeLeft = 8.6f;
-    const float bridgeRight = 23.4f;
-    const float bridgeBottom = 10f;
-    const float bridgeTop = 17f;
-
-    const float baseX = 34f;
-    const float baseY = 0f;
    
     // While on the left side, get Z in line with the bridge
     if (position.X < bridgeRight)
@@ -95,7 +166,7 @@ public class Unit
     }
     // Once crossing the bridge, just target the base
     else
-      destination.Y = baseY;
+      destination.Y = baseZ;
     
     destination.X = position.X switch
     {
