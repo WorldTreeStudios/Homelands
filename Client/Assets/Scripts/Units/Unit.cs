@@ -24,7 +24,8 @@ public class Unit
   protected float Speed { get; set; }
  
   public bool IsLeft { get; protected set; }
-  public float x, y, z;
+  public Vector2 position;
+  public float height;
   
   // Attack
   protected float DetectRange { get; set; }
@@ -35,69 +36,32 @@ public class Unit
   protected int Damage { get; set; }
   
   // TODO: Do these belong here? No. Not sure where they go yet tho lol
-  const float bridgeLeft = 8.6f;
-  const float bridgeRight = 23.4f;
-  const float bridgeBottom = 10f;
-  const float bridgeTop = 17f;
+  private const float bridgeEdge = -6f;
+  private const float bridgeBottom = 10f;
+  private const float bridgeTop = 17f;
 
-  const float baseX = 36f;
+  const float baseX = 22f;
   const float baseZ = 0f;
   
   // Base constructor for every Unit, instances responsible for setting type specific Params.
-  public Unit(bool il, float _x, float _y, float _z)
+  public Unit(bool il, float x, float y, float z)
   {
-    IsLeft = il; 
-    x = _x;
-    y = _y;
-    z = _z;
+    IsLeft = il;
+    position = new Vector2(x, z);
+    height = y;
   }
 
   public void Act(float deltaTime, List<Unit> units)
   {
     TimeSinceAttack += deltaTime;
-   
-    /* TODO: Change pathfinding to the following implementation:
-     * vec2 target = findtarget()
-     * vec2 move = pathTo(target)
-     * update coords
-     */
+
+    Vector2 movementVector = GetMove(units, out Unit toAttack); 
+    if (toAttack is not null) Attack(toAttack); 
     
-    Vector2 movementVector = TargetEnemies(units, out Unit target);
-    if(target is null)
-      movementVector = TargetBase();
-    
-    x += Speed * movementVector.X * deltaTime;
-    z += Speed * movementVector.Y * deltaTime;
+    position.X += Speed * movementVector.X * deltaTime;
+    position.Y += Speed * movementVector.Y * deltaTime;
   }
 
-  /*
-  protected Vector2 FindTarget(List<Unit> units)
-  {
-    Vector2 position = new Vector2(x, z);
-    
-    foreach (Unit u in units)
-    {
-      // If on the same team, don't target
-      if (u.IsLeft == IsLeft) continue;
-      
-      Vector2 enemyPos = new Vector2(u.x, u.z);
-      float distance = Vector2.Distance(position, enemyPos);
-      
-      // If unit is out of detection range, don't target;
-      if (!(distance <= DetectRange)) continue;
-
-      return new Vector2(u.x,u.z);
-    }
-
-    return new Vector2(baseX, baseZ);
-  }
-
-  protected Vector2 pathTo(Vector2 destination)
-  {
-       
-  }
-  */
-  
   protected void Attack(Unit target)
   {
     // TODO: Queue these attacks in some way
@@ -108,76 +72,136 @@ public class Unit
     TimeSinceAttack = 0;
   }
   
-  protected Vector2 TargetEnemies(List<Unit> units, out Unit enemyTargeted)
+  protected Vector2 GetMove(List<Unit> units, out Unit toAttack)
   {
-    Vector2 position = new Vector2(x, z);
-   
-    foreach(Unit u in units)
+    Vector2 movementVector = new Vector2(0, 0);
+    toAttack = null;
+    
+    // First, check for an enemy to target
+    Unit target = FindTarget(units);
+    
+    // If we can target an enemy, either walk towards them, or stand still and attack;
+    if (target is not null)
     {
-      if (u.IsLeft == IsLeft) continue;
+      float distance = Vector2.Distance(position, target.position);
       
-      // Check the distance to every enemy, if they're too far to detect, ignore them
-      Vector2 enemyPos = new Vector2(u.x, u.z);
-      float distance = Vector2.Distance(position, enemyPos);
-      if (!(distance <= DetectRange)) continue;
-        
-      // If an enemy is close enough to detect, we will target it
-      enemyTargeted = u;
-       
-      // If the enemy is in attack range then stand still and attack it
-      if (distance <= AttackRange)
-      {
-        Attack(u); 
-        return new Vector2(0, 0);
-      }
-        
-      // else walk towards it
-      Vector2 movement = Vector2.Normalize(enemyPos - position);
-      return movement;
+      // If we're close enough to attack, we don't need to move, just set the target
+      if (distance <= AttackRange) toAttack = target;
+      // Otherwise, we walk towards the target
+      else movementVector = Vector2.Normalize(target.position - position);
     }
-    
-    // We didn't target any enemies
-    enemyTargeted = null;
-    return default;
+    // If there was no target, we walk towards the base 
+    else movementVector = TowardsBase();
+
+    return movementVector;
   }
   
-  // TODO: This is a fix for the prototype map, should be removed on final map
-  private float Flip(float coord)
+  protected Unit FindTarget(List<Unit> units)
   {
-    return IsLeft ? coord : ((coord - 16) * -1 + 16);
-  }
-  
-  protected Vector2 TargetBase()
-  {
-    // Here we pretend the unit is on the top left, and simply mirror the movements for other cases 
-    Vector2 position = new Vector2(Flip(x), Math.Abs(z));
-    Vector2 destination = new Vector2(0, 0);
-    
-   
-    // While on the left side, get Z in line with the bridge
-    if (position.X < bridgeRight)
+    foreach (Unit u in units)
     {
-      destination.Y = position.Y switch
+      // If on the same team, don't target
+      if (u.IsLeft == IsLeft) continue;
+
+      // Only flying or ranged units can hit flying enemies 
+      if (u.Flying && !(Ranged || Flying)) continue;
+
+      float distance = Vector2.Distance(position, u.position);
+
+      // If unit is out of detection range, don't target;
+      if (!(distance <= DetectRange)) continue;
+
+      // If ranged, we can target any unit in our detection range
+      if (Ranged) return u;
+
+      // If on the same side, there will be no obstructions to the enemy
+      // TODO: Ally collision, Accounting for building targeting units?
+      if (position.X <= bridgeEdge && u.position.X <= bridgeEdge ||
+          position.X >= -bridgeEdge && u.position.X >= -bridgeEdge)
+      {
+        return u;
+      }
+     
+      // If units are both on bridges, guaranteed either obstructed or clear (depends on which bridges)
+      switch (position.Y)
+      {
+        // On top bridge
+        case >= bridgeBottom and <= bridgeTop:
+          switch (u.position.Y)
+          {
+            case >= bridgeBottom and <= bridgeTop: // Enemy on top bridge too
+              return u;
+            case <= -bridgeBottom and >= -bridgeTop: // Enemy on bottom bridge
+              return null;
+          }
+          break;
+       
+        // On bottom bridge
+        case <= -bridgeBottom and >= -bridgeTop:
+          switch (u.position.Y)
+          {
+            case >= bridgeBottom and <= bridgeTop: // Enemy on top bridge
+              return null;
+            case <= -bridgeBottom and >= -bridgeTop: // Enemy on bottom bridge too
+              return u;
+          }
+          break;
+      }
+
+      // General case, find if the line between units crosses the river at a bridge opening 
+      float slope = (u.position.Y - position.Y) / (u.position.X - position.X); // m = y2-y1 / x2 - x1
+     
+      float yAtLeftRiver = slope * (bridgeEdge - position.X) + position.Y; // y = m(x - x1) + y1
+      bool validLeft = (yAtLeftRiver is (< bridgeTop and > bridgeBottom) or (< -bridgeBottom and > -bridgeTop));
+      bool crossesLeft = (position.X < bridgeEdge && bridgeEdge < u.position.X ||
+                          position.X > bridgeEdge && bridgeEdge > u.position.X);
+      bool left = (!crossesLeft || validLeft); // Either the line doesn't cross, or it crosses at bridge
+      
+      float yAtRightRiver = slope * (-bridgeEdge - position.X) + position.Y;
+      bool validRight = (yAtRightRiver is (< bridgeTop and > bridgeBottom) or (< -bridgeBottom and > -bridgeTop)); 
+      bool crossesRight = (position.X < -bridgeEdge && -bridgeEdge < u.position.X ||
+                          position.X > -bridgeEdge && -bridgeEdge > u.position.X);
+      bool right = (!crossesRight || validRight); // Either the line doesn't cross, or it crosses at bridge
+     
+      // If both checks pass, there is a valid line between the units
+      return (left && right) ? u : null;
+    }
+
+    return null;
+  }
+
+  protected Vector2 TowardsBase()
+  {
+    Vector2 destination = position;
+    
+    float travelledX = IsLeft ? position.X : -position.X;
+    float absY = Math.Abs(position.Y); 
+    
+    // While on the left side or bridge, get Z in line with the bridge
+    if (travelledX < -bridgeEdge)
+    {
+      destination.Y = absY switch
       {
         (<= bridgeBottom) => bridgeBottom,
         (>= bridgeTop) => bridgeTop,
-        _ => position.Y
+        _ => absY
       };
     }
     // Once crossing the bridge, just target the base
     else
       destination.Y = baseZ;
     
-    destination.X = position.X switch
+    destination.X = travelledX switch
     {
-      (<= bridgeLeft) => bridgeLeft,
-      (<= bridgeRight) => bridgeRight,
+      (<= bridgeEdge) => bridgeEdge,
+      (<= -bridgeEdge) => -bridgeEdge,
       _ => baseX
     };
-   
+    
+    destination.X *= IsLeft ? 1 : -1;
+    destination.Y *= (position.Y >= 0) ? 1 : -1;
+    
     Vector2 movement = Vector2.Normalize(destination - position);
-    movement.X = IsLeft ? movement.X : -movement.X;
-    movement.Y = (z >= 0) ? movement.Y : -movement.Y;
     return movement;
   }
 }

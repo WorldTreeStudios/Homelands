@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,6 +27,6 @@ public class UnitBehavior : MonoBehaviour
    
     // Else, do stuff
     unit.Act(Time.deltaTime, Main.units);
-    gameObject.transform.position = new Vector3(unit.x, unit.y, unit.z);
+    gameObject.transform.position = new Vector3(unit.position.X, unit.height, unit.position.Y);
   }
 }

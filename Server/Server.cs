@@ -17,7 +17,7 @@ public class Server
   // Gameplay variables
   private List<Player> _players;
   private List<Unit> _units;
-  private static Dictionary<UnitType, Func<bool, float, float, Unit>> _behaviors;
+  private static Dictionary<UnitType, Func<bool, float, float, float, Unit>> _behaviors;
   private const float ManaPerSecond = .5f; 
   
   // Time variables
@@ -27,9 +27,9 @@ public class Server
   static void Main(string[] args)
   {
     // Initialize static variables
-    _behaviors = new Dictionary<UnitType, Func<bool, float, float, Unit>>();
-    _behaviors.Add(UnitType.Cube, (bool isLeft, float x, float z) => new U_Cube(isLeft, x, 0, z));
-    _behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float z) => new U_Sphere(isLeft, x, 0, z));
+    _behaviors = new Dictionary<UnitType, Func<bool, float, float, float, Unit>>();
+    _behaviors.Add(UnitType.Cube, (bool isLeft, float x, float y, float z) => new U_Cube(isLeft, x, y, z));
+    _behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float y, float z) => new U_Sphere(isLeft, x, y, z));
 
     _stopwatch = new Stopwatch();
 
@@ -112,9 +112,9 @@ public class Server
 
           P_PlaceUnit parsed = new P_PlaceUnit();
           parsed.Deserialize(packet);
-          parsed.x = ((parsed.x - 16) * -1) + 16;
+          parsed.x = -parsed.x;
           bool left = _connections[0].Equals(endPoint);
-          _units.Add(_behaviors[parsed.unitType](left, parsed.x, parsed.z));
+          _units.Add(_behaviors[parsed.unitType](left, parsed.x, parsed.y, parsed.z));
 
           byte[] response = parsed.Serialize();
           foreach (IPEndPoint ep in _connections)

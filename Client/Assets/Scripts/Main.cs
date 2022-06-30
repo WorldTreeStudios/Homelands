@@ -70,6 +70,34 @@ public class Main : MonoBehaviour
         SpawnUnit(toSpawn, spawnPos, true);
         
         // ... and send it to the server
+        Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.y, spawnPos.z));
+
+        // TODO: Control active cards based on server data
+        // Remove the card
+        deckController.SelectedCard.SetActive(false);
+        deckController.SelectedCard = null;
+      }
+    }
+    /* Debug, spawn enemy units with right click
+    else if (Input.GetMouseButtonDown(1) && deckController.SelectedCard != null)
+    {
+      RaycastHit hit;
+      Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+      if (Physics.Raycast(ray, out hit))
+      {
+        // Get the appropriate unit type 
+        UnitType toSpawn = deckController.SelectedUnit;
+        
+        // ... and the location of the raycast collision
+        float unitHeight = unitController.Prefabs[toSpawn].GetComponent<MeshRenderer>().bounds.extents.y;
+        Vector3 offsetVector = new Vector3(0, unitHeight, 0);
+        Vector3 spawnPos = hit.point + offsetVector;
+       
+        // ... then spawn the unit
+        SpawnUnit(toSpawn, spawnPos, false);
+        
+        // ... and send it to the server
         Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.z));
 
         // TODO: Control active cards based on server data
@@ -78,6 +106,7 @@ public class Main : MonoBehaviour
         deckController.SelectedCard = null;
       }
     }
+    */
   }
 
   private void SpawnUnit(UnitType ut, Vector3 pos, bool isLeft)
@@ -111,7 +140,7 @@ public class Main : MonoBehaviour
           P_PlaceUnit p = new P_PlaceUnit();
           p.Deserialize(packet);
           
-          SpawnUnit(p.unitType, new Vector3(p.x,10.5f,p.z), false);
+          SpawnUnit(p.unitType, new Vector3(p.x,p.y,p.z), false);
           break;
       }
     }

@@ -3,29 +3,30 @@ using System;
 public class P_PlaceUnit : Packet
 {
   public UnitType unitType;
-  public float x, z;
+  public float x, y, z;
 
   public P_PlaceUnit()
   {
     code = PacketType.PlaceUnit;
   }
 
-  public P_PlaceUnit(UnitType ut, float _x, float _z)
+  public P_PlaceUnit(UnitType ut, float x, float y, float z)
   {
     code = PacketType.PlaceUnit;
 
     unitType = ut;
-    x = _x;
-    z = _z;
+    this.x = x;
+    this.y = y;
+    this.z = z;
   }
 
   public override byte[] Serialize()
   {
-    byte[] result = new byte[1 + 1 + 2 * sizeof(float)];
+    byte[] result = new byte[1 + 1 + 3 * sizeof(float)];
     result[0] = (byte)code;
     result[1] = (byte)unitType;
-    float[] coords = { x, z };
-    Buffer.BlockCopy(coords, 0, result, 2, 2 * sizeof(float));
+    float[] coords = { x, y, z };
+    Buffer.BlockCopy(coords, 0, result, 2, 3 * sizeof(float));
     return result;
   }
 
@@ -34,9 +35,10 @@ public class P_PlaceUnit : Packet
     code = (PacketType)data[0];
     unitType = (UnitType)data[1];
 
-    float[] coords = new float[2];
-    Buffer.BlockCopy(data, 2, coords, 0, 2 * sizeof(float));
+    float[] coords = new float[3];
+    Buffer.BlockCopy(data, 2, coords, 0, 3 * sizeof(float));
     x = coords[0];
-    z = coords[1];
+    y = coords[1];
+    z = coords[2];
   }
 }
