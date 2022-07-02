@@ -46,6 +46,7 @@ public class Unit
   // Base constructor for every Unit, instances responsible for setting type specific Params.
   public Unit(bool il, float x, float y, float z)
   {
+    TimeSinceAttack = ((1 / AttackPerSecond) - 1);
     IsLeft = il;
     position = new Vector2(x, z);
     height = y;
@@ -182,8 +183,8 @@ public class Unit
     {
       destination.Y = absY switch
       {
-        (<= bridgeBottom) => bridgeBottom,
-        (>= bridgeTop) => bridgeTop,
+        (<= bridgeBottom) => (bridgeTop + bridgeBottom) / 2,
+        (>= bridgeTop) => (bridgeTop + bridgeBottom) / 2,
         _ => absY
       };
     }
