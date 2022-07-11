@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Main : MonoBehaviour
 {
@@ -12,6 +13,10 @@ public class Main : MonoBehaviour
   private UnitController unitController;
   [SerializeField]
   private GameObject healthBar;
+  [SerializeField]
+  private Slider continuousMana;
+  [SerializeField] 
+  private Slider discreteMana;
   
   private const int Port = 9999;
   private UdpClient _connection;
@@ -20,6 +25,9 @@ public class Main : MonoBehaviour
   private Queue<byte[]> _packets;
 
   public static List<Unit> units;
+  private const float MaxMana = 10f;
+  private const float ManaPerSecond = .5f; // TODO: This is a shared definition, gather these in a file? 
+  private float _currentMana;
   
   public void Start()
   {
@@ -46,53 +54,51 @@ public class Main : MonoBehaviour
 
     // Receive/Parse messages from the server
     HandleMessages();
+    
+    // Update Mana, UI
+    float increase = Time.deltaTime * ManaPerSecond;
+    if ((_currentMana + increase) < MaxMana)
+      _currentMana += increase; 
+    else
+      _currentMana = MaxMana;
+    discreteMana.value = (float) Math.Truncate(_currentMana) / MaxMana;   
+    continuousMana.value = _currentMana / MaxMana;
   }
 
   private void HandleInput()
   {
     // The user left clicked with a card selected
-    if (Input.GetMouseButtonDown(0) && deckController.SelectedCard != null)
+    GameObject selected = deckController.SelectedCard;
+    if (Input.GetMouseButtonDown(0) && selected != null)
     {
-      RaycastHit hit;
-      Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-      if (Physics.Raycast(ray, out hit))
+      Card card = selected.GetComponent<CardBehaviour>().card;
+      if (_currentMana >= card.ManaCost)
       {
-        // Get the appropriate unit type 
-        UnitType toSpawn = deckController.SelectedUnit;
-        
-        // ... and the location of the raycast collision
-        float unitHeight = unitController.Prefabs[toSpawn].GetComponent<MeshRenderer>().bounds.extents.y;
-        Vector3 offsetVector = new Vector3(0, unitHeight, 0);
-        Vector3 spawnPos = hit.point + offsetVector;
-       
-        // ... then spawn the unit
-        SpawnUnit(toSpawn, spawnPos, true);
-        
-        // ... and send it to the server
-        Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.y, spawnPos.z));
+        _currentMana -= card.ManaCost;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-        // TODO: Control active cards based on server data
-        // Remove the card
-        deckController.SelectedCard.SetActive(false);
-        deckController.SelectedCard = null;
-      }
-    }
-    // Debug, spawn enemy units with right click
-    else if (Input.GetMouseButtonDown(1) && deckController.SelectedCard != null)
-    {
-      RaycastHit hit;
-      Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-      if (Physics.Raycast(ray, out hit))
-      {
-        UnitType toSpawn = deckController.SelectedUnit;
-        float unitHeight = unitController.Prefabs[toSpawn].GetComponent<MeshRenderer>().bounds.extents.y;
-        Vector3 offsetVector = new Vector3(0, unitHeight, 0);
-        Vector3 spawnPos = hit.point + offsetVector;
-        SpawnUnit(toSpawn, spawnPos, false);
-        Send(new P_PlaceUnit(toSpawn, spawnPos.x, spawnPos.y, spawnPos.z));
-        deckController.SelectedCard.SetActive(false);
-        deckController.SelectedCard = null;
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+          // Get the appropriate unit type
+          foreach (UnitType ut in card.Units)
+          {
+            UnitType toSpawn = ut;
+            
+            // ... and the location of the raycast collision
+            float unitHeight = unitController.Prefabs[toSpawn].GetComponent<MeshRenderer>().bounds.extents.y;
+            Vector3 offsetVector = new Vector3(0, unitHeight, 0);
+            Vector3 spawnPos = hit.point + offsetVector;
+         
+            // ... then spawn the unit
+            SpawnUnit(toSpawn, spawnPos, true);
+            
+            // ... and send it to the server
+            Send(new P_PlayCard(card.Id, spawnPos.x, spawnPos.y, spawnPos.z));
+          }
+
+          // Last, put the card at the back of our deck
+          deckController.Play(selected);
+        }
       }
     }
   }
@@ -123,6 +129,8 @@ public class Main : MonoBehaviour
       switch(packetType)
       {
         case PacketType.Connect:
+          break;
+        case PacketType.PlayCard:
           break;
         case PacketType.PlaceUnit:
           P_PlaceUnit p = new P_PlaceUnit();

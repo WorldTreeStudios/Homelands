@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,6 +25,4 @@ public class UnitController : MonoBehaviour
     Prefabs.Add(UnitType.Sphere, sphere);
     Behaviors.Add(UnitType.Sphere, (bool isLeft, Vector3 pos) => new U_Sphere(isLeft, pos.x, pos.y, pos.z));
   }
-
-  void Update() {}
 }

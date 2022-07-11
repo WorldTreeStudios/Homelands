@@ -5,9 +5,7 @@ using System.Numerics;
 public enum UnitType : byte
 {
   Cube,
-  Sphere,
-  Capsule,
-  Cylinder
+  Sphere
 }
 
 public class Unit

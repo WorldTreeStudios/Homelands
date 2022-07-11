@@ -1,7 +1,8 @@
 public enum PacketType : byte
 {
   Connect,
-  PlaceUnit
+  PlaceUnit,
+  PlayCard 
 }
 
 public abstract class Packet

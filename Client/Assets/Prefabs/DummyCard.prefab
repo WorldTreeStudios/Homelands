@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5363148437274547075}
   - component: {fileID: 5363148437274547074}
   - component: {fileID: 6350127570263811437}
-  - component: {fileID: 6160450170980190072}
+  - component: {fileID: 1244799099209186898}
   m_Layer: 5
   m_Name: DummyCard
   m_TagString: Untagged
@@ -122,7 +122,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &6160450170980190072
+--- !u!114 &1244799099209186898
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -131,7 +131,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 5363148437274547076}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f2a8fa4cf16d4de4bbc11647386a51a6, type: 3}
+  m_Script: {fileID: 11500000, guid: cdc1bc0262784551a747e4220bcc9e40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UnitType: 0

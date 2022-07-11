@@ -18,6 +18,7 @@ public class Server
   private List<Player> _players;
   private List<Unit> _units;
   private static Dictionary<UnitType, Func<bool, float, float, float, Unit>> _behaviors;
+  private static Dictionary<CardId, Card> _cards;
   private const float ManaPerSecond = .5f; 
   
   // Time variables
@@ -31,6 +32,9 @@ public class Server
     _behaviors.Add(UnitType.Cube, (bool isLeft, float x, float y, float z) => new U_Cube(isLeft, x, y, z));
     _behaviors.Add(UnitType.Sphere, (bool isLeft, float x, float y, float z) => new U_Sphere(isLeft, x, y, z));
 
+    _cards = new Dictionary<CardId, Card>();
+    _cards.Add(CardId.Cube, new C_Cube());
+    _cards.Add(CardId.Sphere, new C_Sphere());
     _stopwatch = new Stopwatch();
 
     // Start a server instance
@@ -75,6 +79,7 @@ public class Server
       foreach(Unit u in _units)
       {
         u.Act(delta, _units);
+        if (u.Health <= 0) _units.Remove(u);
       }
 
       foreach (Player p in _players)
@@ -108,21 +113,28 @@ public class Server
           }
           break;
 
-        case PacketType.PlaceUnit:
-
-          P_PlaceUnit parsed = new P_PlaceUnit();
+        case PacketType.PlayCard:
+          P_PlayCard parsed = new P_PlayCard();
           parsed.Deserialize(packet);
-          parsed.x = -parsed.x;
           bool left = _connections[0].Equals(endPoint);
-          _units.Add(_behaviors[parsed.unitType](left, parsed.x, parsed.y, parsed.z));
 
-          byte[] response = parsed.Serialize();
-          foreach (IPEndPoint ep in _connections)
+          Card c = _cards[parsed.card];
+          foreach (UnitType ut in c.Units)
           {
-            if (!ep.Equals(endPoint))
-              _listener.Send(response, response.Length, ep);
+            // Spawn units from left player at true x, mirror x for units placed by the right player
+            float serverX = left ? parsed.x : -parsed.x;
+            _units.Add(_behaviors[ut](left, serverX, parsed.y, parsed.z));
+
+            P_PlaceUnit response = new P_PlaceUnit(ut, -parsed.x, parsed.y, parsed.z);
+            byte[] data = response.Serialize();
+            foreach (IPEndPoint ep in _connections)
+            {
+              if (!ep.Equals(endPoint))
+                _listener.Send(data, data.Length, ep);
+            }
+            
+            Console.WriteLine("Placed a unit of type: " + ut + " at ( " + parsed.x + ", " + parsed.z + " ).");
           }
-          Console.WriteLine("Placed a unit of type: " + parsed.unitType + " at ( " + parsed.x + ", " + parsed.z + " ).");
           break;
       }
     }
