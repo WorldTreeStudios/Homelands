@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Numerics;
-
 public class U_Sphere : Unit
 {
   public U_Sphere(bool il, float x, float y, float z) : base(il, x, y, z)

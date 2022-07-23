@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Numerics;
 
 public enum UnitType : byte
 {
   Cube,
-  Sphere
+  Sphere,
+  Tower
 }
 
 public class Unit
@@ -32,14 +34,6 @@ public class Unit
   protected float AttackPerSecond { get; set; }
   protected float TimeSinceAttack { get; set; }
   protected int Damage { get; set; }
-  
-  // TODO: Do these belong here? No. Not sure where they go yet tho lol
-  private const float bridgeEdge = -6f;
-  private const float bridgeBottom = 10f;
-  private const float bridgeTop = 17f;
-
-  const float baseX = 22f;
-  const float baseZ = 0f;
   
   // Base constructor for every Unit, instances responsible for setting type specific Params.
   public Unit(bool il, float x, float y, float z)
@@ -94,7 +88,7 @@ public class Unit
 
     return movementVector;
   }
-  
+
   protected Unit FindTarget(List<Unit> units)
   {
     foreach (Unit u in units)
@@ -112,93 +106,67 @@ public class Unit
 
       // If ranged, we can target any unit in our detection range
       if (Ranged) return u;
-
-      // If on the same side, there will be no obstructions to the enemy
-      // TODO: Ally collision, Accounting for building targeting units?
-      if (position.X <= bridgeEdge && u.position.X <= bridgeEdge ||
-          position.X >= -bridgeEdge && u.position.X >= -bridgeEdge)
-      {
-        return u;
-      }
-     
-      // If units are both on bridges, guaranteed either obstructed or clear (depends on which bridges)
-      switch (position.Y)
-      {
-        // On top bridge
-        case >= bridgeBottom and <= bridgeTop:
-          switch (u.position.Y)
-          {
-            case >= bridgeBottom and <= bridgeTop: // Enemy on top bridge too
-              return u;
-            case <= -bridgeBottom and >= -bridgeTop: // Enemy on bottom bridge
-              return null;
-          }
-          break;
-       
-        // On bottom bridge
-        case <= -bridgeBottom and >= -bridgeTop:
-          switch (u.position.Y)
-          {
-            case >= bridgeBottom and <= bridgeTop: // Enemy on top bridge
-              return null;
-            case <= -bridgeBottom and >= -bridgeTop: // Enemy on bottom bridge too
-              return u;
-          }
-          break;
-      }
-
-      // General case, find if the line between units crosses the river at a bridge opening 
-      float slope = (u.position.Y - position.Y) / (u.position.X - position.X); // m = y2-y1 / x2 - x1
-     
-      float yAtLeftRiver = slope * (bridgeEdge - position.X) + position.Y; // y = m(x - x1) + y1
-      bool validLeft = (yAtLeftRiver is (< bridgeTop and > bridgeBottom) or (< -bridgeBottom and > -bridgeTop));
-      bool crossesLeft = (position.X < bridgeEdge && bridgeEdge < u.position.X ||
-                          position.X > bridgeEdge && bridgeEdge > u.position.X);
-      bool left = (!crossesLeft || validLeft); // Either the line doesn't cross, or it crosses at bridge
       
-      float yAtRightRiver = slope * (-bridgeEdge - position.X) + position.Y;
-      bool validRight = (yAtRightRiver is (< bridgeTop and > bridgeBottom) or (< -bridgeBottom and > -bridgeTop)); 
-      bool crossesRight = (position.X < -bridgeEdge && -bridgeEdge < u.position.X ||
-                          position.X > -bridgeEdge && -bridgeEdge > u.position.X);
-      bool right = (!crossesRight || validRight); // Either the line doesn't cross, or it crosses at bridge
-     
-      // If both checks pass, there is a valid line between the units
-      return (left && right) ? u : null;
+      // Lastly, check that walking to the target won't cross invalid space
+      if (!GameDefs.CrossesRiver(position, u.position)) return u;
     }
-
+    
     return null;
   }
 
   protected Vector2 TowardsBase()
   {
-    Vector2 destination = position;
+    Vector2 destination = new Vector2(GameDefs.BaseX, GameDefs.BaseZ);
+    float normalX = IsLeft ? position.X : -position.X;
+    float normalY = Math.Abs(position.Y);
     
-    float travelledX = IsLeft ? position.X : -position.X;
-    float absY = Math.Abs(position.Y); 
-    
-    // While on the left side or bridge, get Z in line with the bridge
-    if (travelledX < -bridgeEdge)
+    // Midlane
+    if (position.Y is < GameDefs.MidZ and > -GameDefs.MidZ )
     {
-      destination.Y = absY switch
+      switch (normalX)
       {
-        (<= bridgeBottom) => (bridgeTop + bridgeBottom) / 2,
-        (>= bridgeTop) => (bridgeTop + bridgeBottom) / 2,
-        _ => absY
-      };
+        // Before the bridge 
+        case < -GameDefs.MidBarrier:
+          destination.X = -GameDefs.MidBarrier;
+          destination.Y = destination.Y switch
+          {
+            (> GameDefs.MidBridge) => GameDefs.MidBridge,
+            (< -GameDefs.MidBridge) => -GameDefs.MidBridge,
+            (_) => destination.Y
+          };
+          break;
+        // On the bridge TODO: Make them attack the orb
+        case < GameDefs.MidBarrier:
+          destination.X = GameDefs.MidBarrier;
+          destination.Y = position.Y;
+          break;
+      }
     }
-    // Once crossing the bridge, just target the base
+    // Top or bottom lane
     else
-      destination.Y = baseZ;
-    
-    destination.X = travelledX switch
     {
-      (<= bridgeEdge) => bridgeEdge,
-      (<= -bridgeEdge) => -bridgeEdge,
-      _ => baseX
-    };
-    
+      switch (normalX)
+      {
+        // Before the bridge
+        case < -GameDefs.ExtremeBarrier:
+          destination.X = -GameDefs.ExtremeBarrier;
+          destination.Y = normalY switch
+          {
+            (> (GameDefs.BridgeZ + GameDefs.BridgeWidth)) => (GameDefs.BridgeZ + GameDefs.BridgeWidth),
+            (< GameDefs.BridgeZ) => (GameDefs.BridgeZ),
+            (_) => normalY
+          };
+          break;
+        // On the bridge
+        case < GameDefs.ExtremeBarrier:
+          destination.X = GameDefs.ExtremeBarrier;
+          destination.Y = normalY;
+          break;
+      }
+    }
+
     destination.X *= IsLeft ? 1 : -1;
-    destination.Y *= (position.Y >= 0) ? 1 : -1;
+    destination.Y *= (position.Y > 0) ? 1 : -1;
     
     Vector2 movement = Vector2.Normalize(destination - position);
     return movement;

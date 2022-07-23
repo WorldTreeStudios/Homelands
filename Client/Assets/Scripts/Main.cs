@@ -25,9 +25,7 @@ public class Main : MonoBehaviour
   private Queue<byte[]> _packets;
 
   public static List<Unit> units;
-  private const float MaxMana = 10f;
-  private const float ManaPerSecond = .5f; // TODO: This is a shared definition, gather these in a file? 
-  private float _currentMana;
+  private float _currentMana = GameDefs.StartingMana;
   
   public void Start()
   {
@@ -56,13 +54,13 @@ public class Main : MonoBehaviour
     HandleMessages();
     
     // Update Mana, UI
-    float increase = Time.deltaTime * ManaPerSecond;
-    if ((_currentMana + increase) < MaxMana)
+    float increase = Time.deltaTime * GameDefs.ManaPerSecond;
+    if ((_currentMana + increase) < GameDefs.MaxMana)
       _currentMana += increase; 
     else
-      _currentMana = MaxMana;
-    discreteMana.value = (float) Math.Truncate(_currentMana) / MaxMana;   
-    continuousMana.value = _currentMana / MaxMana;
+      _currentMana = GameDefs.MaxMana;
+    discreteMana.value = (float) Math.Truncate(_currentMana) / GameDefs.MaxMana;   
+    continuousMana.value = _currentMana / GameDefs.MaxMana;
   }
 
   private void HandleInput()

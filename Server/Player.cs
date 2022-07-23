@@ -4,10 +4,12 @@ public class Player
 {
   public IPEndPoint EndPoint { get; set; }
   public float Mana { get; set; }
-
-  public Player(IPEndPoint ip, float mana = 0)
+  public bool Left { get; set; }
+  
+  public Player(IPEndPoint ip, bool left, float mana = GameDefs.StartingMana)
   {
     EndPoint = ip;
+    Left = left;
     Mana = mana;
   }
 }

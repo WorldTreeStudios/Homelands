@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Numerics;
-
 public class U_Cube : Unit
 {
   public U_Cube(bool il, float x, float y, float z) : base(il, x, y, z)
