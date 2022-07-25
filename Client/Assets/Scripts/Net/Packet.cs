@@ -1,5 +1,6 @@
 public enum PacketType : byte
 {
+  GameStart,
   Connect,
   PlaceUnit,
   PlayCard 

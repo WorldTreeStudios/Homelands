@@ -10,10 +10,10 @@ public class Game
   // Networking
   public Queue<(byte[], IPEndPoint)> Packets;
   private Dictionary<IPEndPoint, Player> _players;
- 
+
   // Gameplay 
   private List<Unit> _units;
-  
+
   // Time variables
   private static Stopwatch _stopwatch;
   private const int TickRate = 20;
@@ -23,42 +23,55 @@ public class Game
     Packets = new Queue<(byte[], IPEndPoint)>();
 
     _players = new Dictionary<IPEndPoint, Player>();
-    _players.Add(p1, new Player(p1,true));
-    _players.Add(p2, new Player(p2,false));
-    
+    _players.Add(p1, new Player(p1, true));
+    _players.Add(p2, new Player(p2, false));
+
     _units = new List<Unit>();
     _stopwatch = new Stopwatch();
   }
 
   public void Start()
   {
-    _stopwatch.Start();
+    foreach (Player p in _players.Values)
+    {
+      Server.Send(p, new P_GameStart().Serialize());
+    }
     
+    _stopwatch.Start();
+
     Update();
   }
-  
+
   private void Update()
   {
     double time = _stopwatch.Elapsed.TotalSeconds;
     float delta;
-    
+
     while (true)
     {
       // Calculate deltaTime from last update
       double currTime = _stopwatch.Elapsed.TotalSeconds;
-      (delta, time) = ((float) (currTime - time), currTime);
+      (delta, time) = ((float)(currTime - time), currTime);
 
-      foreach(Unit u in _units)
+      foreach (Unit u in _units)
       {
         u.Act(delta, _units);
+        
+        while (u.AttackQueue.Count > 0)
+        {
+          (Unit t, int d) = u.AttackQueue.Dequeue();
+          t.Health -= d;
+          if (t.Health <= 0) t.Health = 0;
+        }
       }
+
       _units.RemoveAll(u => (u.Health <= 0));
-      
+
       foreach (Player p in _players.Values)
       {
         float increase = delta * GameDefs.ManaPerSecond;
         if ((p.Mana + increase) < GameDefs.MaxMana)
-          p.Mana += increase; 
+          p.Mana += increase;
         else
           p.Mana = GameDefs.MaxMana;
       }
@@ -69,7 +82,7 @@ public class Game
       Thread.Sleep(1000 / TickRate);
     }
   }
-  
+
   // Parse packet queue
   private void HandleMessages()
   {
@@ -83,12 +96,12 @@ public class Game
         case PacketType.PlayCard:
           P_PlayCard parsed = new P_PlayCard();
           parsed.Deserialize(packet);
-         
+
           Player p = _players[endPoint];
           Card c = Server.Cards[parsed.card];
           if (p.Mana < c.ManaCost) break;
-          p.Mana -= c.ManaCost; 
-          
+          p.Mana -= c.ManaCost;
+
           foreach (UnitType ut in c.Units)
           {
             // Spawn units from left player at true x, mirror x for units placed by the right player
@@ -101,9 +114,10 @@ public class Game
             {
               Server.Send(entry.Value, data);
             }
-            
+
             Console.WriteLine("Placed a unit of type: " + ut + " at ( " + parsed.x + ", " + parsed.z + " ).");
           }
+
           break;
       }
     }

@@ -6,10 +6,10 @@ public class U_Cube : Unit
     Ranged = false;
     Flying = false;
     Speed = 8f;
-   
+
     MaxHealth = 100;
     Health = MaxHealth;
-    
+
     DetectRange = 100f;
     AttackRange = 3f;
     AttackPerSecond = 1;

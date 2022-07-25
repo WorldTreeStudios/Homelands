@@ -6,10 +6,10 @@ public class U_Sphere : Unit
     Ranged = false;
     Flying = false;
     Speed = 5f;
-   
+
     MaxHealth = 100;
     Health = MaxHealth;
-    
+
     DetectRange = 8f;
     AttackRange = 4f;
     AttackPerSecond = 2f;

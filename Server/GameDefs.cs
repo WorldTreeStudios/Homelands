@@ -1,4 +1,5 @@
 ﻿// This file contains all the shared constant definitions between the Client and Server
+
 using System.Numerics;
 
 public class GameDefs
@@ -13,7 +14,7 @@ public class GameDefs
 
   public const float BaseX = 36f;
   public const float BaseZ = 0f;
-  
+
   public const float MaxMana = 10f;
   public const float ManaPerSecond = .5f;
   public const float StartingMana = 2.5f;
@@ -32,7 +33,7 @@ public class GameDefs
    *     BRIDGE
    * With the lines comprising it being AB, BC, CD, DE, EF, GH, HI, IJ, JK, and KL
    */
-  private static readonly Vector2 ra = new Vector2(-MidBarrier, MidZ/2 - MidBridge);
+  private static readonly Vector2 ra = new Vector2(-MidBarrier, MidZ / 2 - MidBridge);
   private static readonly Vector2 rb = new Vector2(-MidBarrier, MidZ);
   private static readonly Vector2 rc = new Vector2(-ExtremeBarrier, BridgeZ);
   private static readonly Vector2 rd = new Vector2(ExtremeBarrier, BridgeZ);
@@ -44,7 +45,7 @@ public class GameDefs
   private static readonly Vector2 rj = new Vector2(-ExtremeBarrier, -BridgeZ);
   private static readonly Vector2 rk = new Vector2(-MidBarrier, -MidZ);
   private static readonly Vector2 rl = new Vector2(-MidBarrier, -(MidZ / 2 - MidBridge));
-  
+
   // Finds whether the line segment connecting a to b crosses an illegal region 
   public static bool CrossesRiver(Vector2 a, Vector2 b)
   {
@@ -59,7 +60,7 @@ public class GameDefs
            Intersects(a, b, rj, rk) ||
            Intersects(a, b, rk, rl);
   }
-  
+
   // Finds whether two line segments, AB and CD, intersect
   private static bool Intersects(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
   {

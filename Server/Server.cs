@@ -5,21 +5,21 @@ using System.Net.Sockets;
 using System.Threading;
 
 public class Server
-{  
+{
   // Network variables
   private const int Port = 9999;
   private static UdpClient _listener;
   private static IPEndPoint _endPoint;
   private static Queue<IPEndPoint> _playerQueue;
 
-  private static bool _active = true;   
-  
+  private static bool _active = true;
+
   // Gameplay variables
   public static Dictionary<UnitType, Func<bool, float, float, float, Unit>> Behaviors;
   public static Dictionary<CardId, Card> Cards;
   private static List<Game> activeGames;
   private static Dictionary<IPEndPoint, Game> relatedGames;
-  
+
   static void Main(string[] args)
   {
     Behaviors = new Dictionary<UnitType, Func<bool, float, float, float, Unit>>();
@@ -33,7 +33,7 @@ public class Server
     _playerQueue = new Queue<IPEndPoint>();
     activeGames = new List<Game>();
     relatedGames = new Dictionary<IPEndPoint, Game>();
-    
+
     _listener = new UdpClient(Port);
     _endPoint = new IPEndPoint(IPAddress.Any, Port);
 
@@ -53,26 +53,34 @@ public class Server
       case PacketType.Connect:
         Console.WriteLine("Connection accepted from: " + endPoint.Address + ".");
         _playerQueue.Enqueue(endPoint);
+        Send(endPoint, new P_Connect().Serialize());
+        
         if (_playerQueue.Count >= 2)
         {
           IPEndPoint p1 = _playerQueue.Dequeue();
           IPEndPoint p2 = _playerQueue.Dequeue();
           Game g = new Game(p1, p2);
-          relatedGames.Add(p1,g);
-          relatedGames.Add(p2,g);
+          relatedGames.Add(p1, g);
+          relatedGames.Add(p2, g);
           activeGames.Add(g);
 
           Thread t = new Thread(g.Start);
           t.Start();
         }
+
         break;
-      
+
       default:
         relatedGames[endPoint].Packets.Enqueue((packet, endPoint));
         break;
     }
   }
 
+  public static void Send(IPEndPoint ep, byte[] data)
+  {
+    _listener.Send(data, data.Length, ep);
+  }
+  
   public static void Send(Player p, byte[] data)
   {
     _listener.Send(data, data.Length, p.EndPoint);

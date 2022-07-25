@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Numerics;
 
 public enum UnitType : byte
@@ -32,12 +31,16 @@ public class Unit
   protected float AttackRange { get; set; }
   
   protected float AttackPerSecond { get; set; }
-  protected float TimeSinceAttack { get; set; }
-  protected int Damage { get; set; }
+  private float TimeSinceAttack { get; set; }
+  public int Damage { get; set; }
+  
+  public Queue<(Unit, int)> AttackQueue;
+  protected Unit Target;
   
   // Base constructor for every Unit, instances responsible for setting type specific Params.
   public Unit(bool il, float x, float y, float z)
   {
+    AttackQueue = new Queue<(Unit, int)>();
     TimeSinceAttack = ((1 / AttackPerSecond) - 1);
     IsLeft = il;
     position = new Vector2(x, z);
@@ -59,9 +62,8 @@ public class Unit
   {
     // TODO: Queue these attacks in some way
     if (TimeSinceAttack < (1 / AttackPerSecond)) return;
-    
-    target.Health -= Damage;
-    if (target.Health < 0) target.Health = 0;
+
+    AttackQueue.Enqueue((target, Damage));
     TimeSinceAttack = 0;
   }
   
@@ -71,17 +73,17 @@ public class Unit
     toAttack = null;
     
     // First, check for an enemy to target
-    Unit target = FindTarget(units);
+    Target = FindTarget(units);
     
     // If we can target an enemy, either walk towards them, or stand still and attack;
-    if (target is not null)
+    if (Target is not null && Target.Health > 0)
     {
-      float distance = Vector2.Distance(position, target.position);
+      float distance = Vector2.Distance(position, Target.position);
       
       // If we're close enough to attack, we don't need to move, just set the target
-      if (distance <= AttackRange) toAttack = target;
+      if (distance <= AttackRange) toAttack = Target;
       // Otherwise, we walk towards the target
-      else movementVector = Vector2.Normalize(target.position - position);
+      else movementVector = Vector2.Normalize(Target.position - position);
     }
     // If there was no target, we walk towards the base 
     else movementVector = TowardsBase();
@@ -91,6 +93,15 @@ public class Unit
 
   protected Unit FindTarget(List<Unit> units)
   {
+    // If we've already been attacking somebody, and they're still in our attack, they remain our target
+    if (Target is not null)
+    {
+      float distance = Vector2.Distance(position, Target.position);
+      
+      // If we're close enough to attack, we don't need to move, just set the target
+      if (distance <= AttackRange) return Target;
+    }
+    
     foreach (Unit u in units)
     {
       // If on the same team, don't target

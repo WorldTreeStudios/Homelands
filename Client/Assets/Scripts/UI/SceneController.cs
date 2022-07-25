@@ -3,24 +3,28 @@ using UnityEngine.SceneManagement;
 
 public class SceneController : MonoBehaviour
 {
-   public void LoadMainMenu()
+   public static void Load()
+   {
+      SceneManager.LoadScene("Loading");
+   }
+   public static void LoadMainMenu()
    {
       SceneManager.LoadScene("MainMenu");
    }
    
-   public void LoadBattle()
+   public static void LoadBattle()
    {
       SceneManager.LoadScene("Battle");
    }
 
-   public void LoadDecks()
+   public static void LoadDecks()
    {
       // TODO: Make deck builder 
       Debug.Log("Deck builder button pressed!");
       //SceneManager.LoadScene("Decks");
    }
    
-   public void LoadStore()
+   public static void LoadStore()
    {
       // TODO: Make store
       Debug.Log("Store button pressed!");
