@@ -250,7 +250,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &8643638281823918656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -277,7 +277,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8643638281823918659}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35a90bdd0c3bfe540970d68696242994, type: 3}
+  m_Script: {fileID: 11500000, guid: 17aae000e6ceca64d9a38f71646682d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &8643638282850076038
